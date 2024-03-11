@@ -10,8 +10,9 @@ import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
-import ru.tecon.actOperHPRep.model.Object;
+import ru.tecon.actOperHPRep.model.CellStyleClass;
 import ru.tecon.actOperHPRep.model.RepType;
+import ru.tecon.actOperHPRep.model.ReportObject;
 import ru.tecon.actOperHPRep.model.Value;
 
 import javax.sql.DataSource;
@@ -48,6 +49,7 @@ public class ActOperHPRep {
 
 
     private int Rows;
+    private List<CellStyleClass> colors = new ArrayList<>();
     private DataSource dsR;
     public void setDsR(DataSource dsR) {
         this.dsR = dsR;
@@ -70,7 +72,7 @@ public class ActOperHPRep {
         try {
             w = ar.printReport(repId, dsR, dsRW);
             ar.saveReportIntoTable (w, repId, dsRW);
-//            ar.saveReportIntoFile(w, "C:\\abc\\ActOperMOEK_G_3.xlsx");
+//            ar.saveReportIntoFile(w, "C:\\abc\\ActOperMOEK_DelTest.xlsx");
 
         } catch (IOException | SQLException | ParseException | DecoderException e) {
             LOGGER.log(Level.WARNING, "makeReport error", e);
@@ -988,10 +990,10 @@ public class ActOperHPRep {
         SXSSFSheet sh = wb.getSheetAt(0);
 
         // Заполняем лист значениями, взятыми из таблицы
-        List<Object> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
         Rows = begRow;
 
-        for (Object object: objects) {
+        for (ReportObject object: objects) {
                 SXSSFRow row = sh.createRow(Rows);
                 row.setHeight((short) 350);
                 SXSSFCell objNumCell = row.createCell(0);
@@ -1016,8 +1018,6 @@ public class ActOperHPRep {
                 int i = 6;
                 for (Value value : object.getValues()){
 
-
-
                     SXSSFCell tnv = row.createCell(i);
                     tnv.setCellValue(value.getTnv());
                     tnv.setCellStyle(cellNoBoldStyle);
@@ -1036,16 +1036,38 @@ public class ActOperHPRep {
 
                     SXSSFCell parValue = row.createCell(i+4);
                     parValue.setCellValue(value.getParValue());
-                    CellStyle colored = setCellNoBoldStyle(wb);
                     if (value.getColor() != null) {
-
-                        String rgbS = value.getColor();
-                        byte [] rgbB = Hex.decodeHex(rgbS);
-                        XSSFColor color = new XSSFColor(rgbB, null);
-                        colored.setFillForegroundColor(color);
-                        colored.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        if (colors.isEmpty()) {
+                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                            String rgbS = value.getColor();
+                            byte [] rgbB = Hex.decodeHex(rgbS);
+                            XSSFColor color = new XSSFColor(rgbB, null);
+                            cellColoredStyle.setFillForegroundColor(color);
+                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            parValue.setCellStyle(cellColoredStyle);
+                        } else {
+                            int j = 0;
+                            for (CellStyleClass styleForColoredCell : colors) {
+                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
+                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
+                                    j = 1;
+                                }
+                            }
+                            if (j == 0) {
+                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                                String rgbS = value.getColor();
+                                byte [] rgbB = Hex.decodeHex(rgbS);
+                                XSSFColor color = new XSSFColor(rgbB, null);
+                                cellColoredStyle.setFillForegroundColor(color);
+                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                                parValue.setCellStyle(cellColoredStyle);
+                            }
+                        }
+                    } else {
+                        parValue.setCellStyle(cellNoBoldStyle);
                     }
-                    parValue.setCellStyle(colored);
                     i = i + 5;
                 }
                 Rows++;
@@ -1058,12 +1080,12 @@ public class ActOperHPRep {
         SXSSFSheet sh = wb.getSheetAt(0);
 
         // Заполняем лист значениями, взятыми из таблицы
-        List<Object> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
 
         Rows = begRow;
 
 
-        for (Object object: objects) {
+        for (ReportObject object: objects) {
                 SXSSFRow row = sh.createRow(Rows);
                 row.setHeight((short) 350);
                 SXSSFCell objNumCell = row.createCell(0);
@@ -1106,16 +1128,38 @@ public class ActOperHPRep {
 
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
-                    CellStyle colored = setCellNoBoldStyle(wb);
                     if (value.getColor() != null) {
-
-                        String rgbS = value.getColor();
-                        byte [] rgbB = Hex.decodeHex(rgbS);
-                        XSSFColor color = new XSSFColor(rgbB, null);
-                        colored.setFillForegroundColor(color);
-                        colored.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        if (colors.isEmpty()) {
+                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                            String rgbS = value.getColor();
+                            byte [] rgbB = Hex.decodeHex(rgbS);
+                            XSSFColor color = new XSSFColor(rgbB, null);
+                            cellColoredStyle.setFillForegroundColor(color);
+                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            parValue.setCellStyle(cellColoredStyle);
+                        } else {
+                            int j = 0;
+                            for (CellStyleClass styleForColoredCell : colors) {
+                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
+                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
+                                    j = 1;
+                                }
+                            }
+                            if (j == 0) {
+                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                                String rgbS = value.getColor();
+                                byte [] rgbB = Hex.decodeHex(rgbS);
+                                XSSFColor color = new XSSFColor(rgbB, null);
+                                cellColoredStyle.setFillForegroundColor(color);
+                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                                parValue.setCellStyle(cellColoredStyle);
+                            }
+                        }
+                    } else {
+                        parValue.setCellStyle(cellNoBoldStyle);
                     }
-                    parValue.setCellStyle(colored);
                     i++;
                 }
                 Rows++;
@@ -1128,11 +1172,11 @@ public class ActOperHPRep {
         SXSSFSheet sh = wb.getSheetAt(0);
 
         // Заполняем лист значениями, взятыми из таблицы
-        List<Object> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
 
         Rows = begRow;
 
-        for (Object object: objects) {
+        for (ReportObject object: objects) {
                 SXSSFRow row = sh.createRow(Rows);
                 row.setHeight((short) 350);
                 SXSSFCell objNumCell = row.createCell(0);
@@ -1164,19 +1208,40 @@ public class ActOperHPRep {
                 int i = 8;
                 for (Value value : object.getValues()){
 
-
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
-                    CellStyle colored = setCellNoBoldStyle(wb);
                     if (value.getColor() != null) {
-
-                        String rgbS = value.getColor();
-                        byte [] rgbB = Hex.decodeHex(rgbS);
-                        XSSFColor color = new XSSFColor(rgbB, null);
-                        colored.setFillForegroundColor(color);
-                        colored.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        if (colors.isEmpty()) {
+                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                            String rgbS = value.getColor();
+                            byte [] rgbB = Hex.decodeHex(rgbS);
+                            XSSFColor color = new XSSFColor(rgbB, null);
+                            cellColoredStyle.setFillForegroundColor(color);
+                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            parValue.setCellStyle(cellColoredStyle);
+                        } else {
+                            int j = 0;
+                            for (CellStyleClass styleForColoredCell : colors) {
+                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
+                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
+                                    j = 1;
+                                }
+                            }
+                            if (j == 0) {
+                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                                String rgbS = value.getColor();
+                                byte [] rgbB = Hex.decodeHex(rgbS);
+                                XSSFColor color = new XSSFColor(rgbB, null);
+                                cellColoredStyle.setFillForegroundColor(color);
+                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                                parValue.setCellStyle(cellColoredStyle);
+                            }
+                        }
+                    } else {
+                        parValue.setCellStyle(cellNoBoldStyle);
                     }
-                    parValue.setCellStyle(colored);
                     i++;
                 }
                 Rows++;
@@ -1189,12 +1254,12 @@ public class ActOperHPRep {
         SXSSFSheet sh = wb.getSheetAt(0);
 
         // Заполняем лист значениями, взятыми из таблицы
-        List<Object> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
 
         Rows = begRow;
 
 
-        for (Object object: objects) {
+        for (ReportObject object: objects) {
                 SXSSFRow row = sh.createRow(Rows);
                 row.setHeight((short) 350);
                 SXSSFCell objNumCell = row.createCell(0);
@@ -1229,16 +1294,38 @@ public class ActOperHPRep {
 
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
-                    CellStyle colored = setCellNoBoldStyle(wb);
                     if (value.getColor() != null) {
-
-                        String rgbS = value.getColor();
-                        byte [] rgbB = Hex.decodeHex(rgbS);
-                        XSSFColor color = new XSSFColor(rgbB, null);
-                        colored.setFillForegroundColor(color);
-                        colored.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        if (colors.isEmpty()) {
+                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                            String rgbS = value.getColor();
+                            byte [] rgbB = Hex.decodeHex(rgbS);
+                            XSSFColor color = new XSSFColor(rgbB, null);
+                            cellColoredStyle.setFillForegroundColor(color);
+                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            parValue.setCellStyle(cellColoredStyle);
+                        } else {
+                            int j = 0;
+                            for (CellStyleClass styleForColoredCell : colors) {
+                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
+                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
+                                    j = 1;
+                                }
+                            }
+                            if (j == 0) {
+                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                                String rgbS = value.getColor();
+                                byte [] rgbB = Hex.decodeHex(rgbS);
+                                XSSFColor color = new XSSFColor(rgbB, null);
+                                cellColoredStyle.setFillForegroundColor(color);
+                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                                parValue.setCellStyle(cellColoredStyle);
+                            }
+                        }
+                    } else {
+                        parValue.setCellStyle(cellNoBoldStyle);
                     }
-                    parValue.setCellStyle(colored);
                     i++;
                 }
                 Rows++;
@@ -1251,11 +1338,11 @@ public class ActOperHPRep {
         SXSSFSheet sh = wb.getSheetAt(0);
 
         // Заполняем лист значениями, взятыми из таблицы
-        List<Object> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
 
         Rows = begRow;
 
-        for (Object object: objects) {
+        for (ReportObject object: objects) {
             SXSSFRow row = sh.createRow(Rows);
             row.setHeight((short) 350);
             SXSSFCell objNumCell = row.createCell(0);
@@ -1277,34 +1364,55 @@ public class ActOperHPRep {
             int i = 5;
             for (Value value : object.getValues()){
 
-
                 SXSSFCell parValue = row.createCell(i);
                 parValue.setCellValue(value.getParValue());
-                CellStyle colored = setCellNoBoldStyle(wb);
                 if (value.getColor() != null) {
-
-                    String rgbS = value.getColor();
-                    byte [] rgbB = Hex.decodeHex(rgbS);
-                    XSSFColor color = new XSSFColor(rgbB, null);
-                    colored.setFillForegroundColor(color);
-                    colored.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                    if (colors.isEmpty()) {
+                        CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                        String rgbS = value.getColor();
+                        byte [] rgbB = Hex.decodeHex(rgbS);
+                        XSSFColor color = new XSSFColor(rgbB, null);
+                        cellColoredStyle.setFillForegroundColor(color);
+                        cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                        parValue.setCellStyle(cellColoredStyle);
+                    } else {
+                        int j = 0;
+                        for (CellStyleClass styleForColoredCell : colors) {
+                            if (styleForColoredCell.getColorHex().equals(value.getColor())) {
+                                parValue.setCellStyle(styleForColoredCell.getColoredCell());
+                                j = 1;
+                            }
+                        }
+                        if (j == 0) {
+                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                            String rgbS = value.getColor();
+                            byte [] rgbB = Hex.decodeHex(rgbS);
+                            XSSFColor color = new XSSFColor(rgbB, null);
+                            cellColoredStyle.setFillForegroundColor(color);
+                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            parValue.setCellStyle(cellColoredStyle);
+                        }
+                    }
+                } else {
+                    parValue.setCellStyle(cellNoBoldStyle);
                 }
-                parValue.setCellStyle(colored);
                 i++;
             }
             Rows++;
         }
     }
 
-    public List<Object> reworkObjList(int repId, DataSource dsR, DataSource dsRW, int cols, RepType repType) {
-        List<Object> result = new ArrayList<>();
-        List<Object> tempObj = loadObjects(repId, dsR);
+    public List<ReportObject> reworkObjList(int repId, DataSource dsR, DataSource dsRW, int cols, RepType repType) {
+        List<ReportObject> result = new ArrayList<>();
+        List<ReportObject> tempObj = loadObjects(repId, dsR);
         BigDecimal percentage = new BigDecimal(0);
         double size = tempObj.size();
         double iterationPercent = 100/size;
         BigDecimal iterationPercentBD = new BigDecimal(iterationPercent);
 
-        for (Object object : tempObj) {
+        for (ReportObject object : tempObj) {
             if (!interrupted(repId, dsR).equals("Q")) {
                 switch (repType.getType()) {
                     case ("Т1"):
@@ -1344,7 +1452,7 @@ public class ActOperHPRep {
                     result.add(object);
                 } else {
                     for (int i = 0; i < (object.getValues().size()/cols); i++) {
-                        Object tempObject = new Object(object.getNumPP(), object.getObjId(), object.getObjName(), object.getFilial(),
+                        ReportObject tempObject = new ReportObject(object.getNumPP(), object.getObjId(), object.getObjName(), object.getFilial(),
                                 object.getPredpr(), object.getObjAddress());
                         List<Value> tempValue = new ArrayList<>();
                         for (int k = 0; k < cols; k++) {
@@ -1384,14 +1492,14 @@ public class ActOperHPRep {
     }
 
     //получаем список объектов в
-    public List<Object> loadObjects(int repId, DataSource ds) {
-        List<Object> result = new ArrayList<>();
+    public List<ReportObject> loadObjects(int repId, DataSource ds) {
+        List<ReportObject> result = new ArrayList<>();
         try (Connection connect = ds.getConnection();
              PreparedStatement stm = connect.prepareStatement(LOAD_OBJECT)) {
             stm.setInt(1, repId);
             ResultSet res = stm.executeQuery();
             while (res.next()) {
-                Object item = new Object(res.getInt("n_id"), res.getInt("obj_id"),
+                ReportObject item = new ReportObject(res.getInt("n_id"), res.getInt("obj_id"),
                         res.getString("obj_name"), res.getString("filial"),
                         res.getString("predpr"), res.getString("obj_address"));
                 result.add(item);

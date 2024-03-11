@@ -4,8 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Object implements Serializable {
-
+public class ReportObject implements Serializable {
     private int numPP;
     private int objId;
     private String objName;
@@ -14,7 +13,7 @@ public class Object implements Serializable {
     private String objAddress;
     private List<Value> values;
 
-    public Object(int numPP, int objId, String objName, String filial, String predpr, String objAddress) {
+    public ReportObject(int numPP, int objId, String objName, String filial, String predpr, String objAddress) {
         this.numPP = numPP;
         this.objId = objId;
         this.objName = objName;
@@ -81,7 +80,7 @@ public class Object implements Serializable {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", Object.class.getSimpleName() + "[", "]")
+        return new StringJoiner(", ", ReportObject.class.getSimpleName() + "[", "]")
                 .add("numPP=" + numPP)
                 .add("objId=" + objId)
                 .add("objName='" + objName + "'")
