@@ -12,6 +12,7 @@ public class Value implements Serializable {
     private String max;
     private String parValue;
     private String color;
+    private String measure;
 
     public Value(String parValue, String color) {
         this.parValue = parValue;
@@ -34,6 +35,15 @@ public class Value implements Serializable {
         this.max = max;
         this.parValue = parValue;
         this.color = color;
+    }
+
+    public Value(String zone, String min, String max, String parValue, String color, String measure) {
+        this.zone = zone;
+        this.min = min;
+        this.max = max;
+        this.parValue = parValue;
+        this.color = color;
+        this.measure = measure;
     }
 
     public String getZone() {
@@ -92,6 +102,14 @@ public class Value implements Serializable {
         this.color = color;
     }
 
+    public String getMeasure() {
+        return measure;
+    }
+
+    public void setMeasure(String measure) {
+        this.measure = measure;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", Value.class.getSimpleName() + "[", "]")
@@ -102,6 +120,7 @@ public class Value implements Serializable {
                 .add("max='" + max + "'")
                 .add("parValue='" + parValue + "'")
                 .add("color='" + color + "'")
+                .add("measure='" + measure + "'")
                 .toString();
     }
 }

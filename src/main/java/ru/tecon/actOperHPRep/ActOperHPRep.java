@@ -10,7 +10,6 @@ import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
-import ru.tecon.actOperHPRep.model.CellStyleClass;
 import ru.tecon.actOperHPRep.model.RepType;
 import ru.tecon.actOperHPRep.model.ReportObject;
 import ru.tecon.actOperHPRep.model.Value;
@@ -26,17 +25,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ActOperHPRep {
     private static final Logger LOGGER = Logger.getLogger(ActOperHPRep.class.getName());
-    private static final String LOAD_REP_TYPE = "select * from admin.REP_FACT_REPORT where id=?";
+    private static final String LOAD_REP_TYPE = "select a.*,b.par_code from admin.REP_FACT_REPORT a, admin.dz_param b where a.par_id=b.id and a.id=?";
     private static final String LOAD_OBJECT = "select * from dsp_0079t.sel_object_list(?)";
     private static final String LOAD_VALUE_T1_TYPE = "select * from dsp_0079t.sel_rep_fact_t(?,?)";
     private static final String LOAD_VALUE_T7_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_t7(?,?)";
-    private static final String LOAD_VALUE_V_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_v(?, ?)";
+    private static final String LOAD_VALUE_V_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_v(?, ?) order by zone, measure, time_stamp";
     private static final String LOAD_VALUE_P_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_p(?, ?)";
     private static final String LOAD_VALUE_G_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_g(?, ?)";
 
@@ -49,7 +49,7 @@ public class ActOperHPRep {
 
 
     private int Rows;
-    private List<CellStyleClass> colors = new ArrayList<>();
+    private HashMap<String, CellStyle> colors = new HashMap<>();
     private DataSource dsR;
     public void setDsR(DataSource dsR) {
         this.dsR = dsR;
@@ -61,9 +61,11 @@ public class ActOperHPRep {
         this.dsRW = dsRW;
     }
 
-    public static void makeReport (int repId, DataSource dsR, DataSource dsRW) {
+    public static void makeReport (int repId, DataSource dsR, DataSource dsRW) throws InterruptedException {
         long currentTime = System.nanoTime();
         LOGGER.log(Level.INFO, "start make report {0}", repId);
+
+        Thread.sleep(1000);
 
         ActOperHPRep ar = new ActOperHPRep();
         ar.setDsR(dsR);
@@ -84,26 +86,26 @@ public class ActOperHPRep {
 
     }
 
-//    private int saveReportIntoFile (SXSSFWorkbook workbook, String file) {
-//
-//        FileOutputStream fos;
-//        int res = 0;
-//
-//        try {
-//            fos = new FileOutputStream(file);
-//            workbook.write(fos);
-//            System.out.println("saveReportIntoFile");
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            System.out.println("Cant create file");
-//            System.out.println(e.getMessage());
-//            res = 1;
-//        }
-//
-//        System.out.println("ok report");
-//        return res;
-//    }
+    private int saveReportIntoFile (SXSSFWorkbook workbook, String file) {
+
+        FileOutputStream fos;
+        int res = 0;
+
+        try {
+            fos = new FileOutputStream(file);
+            workbook.write(fos);
+            System.out.println("saveReportIntoFile");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Cant create file");
+            System.out.println(e.getMessage());
+            res = 1;
+        }
+
+        System.out.println("ok report");
+        return res;
+    }
 
     /*
       Метод создает нужный воркбук. Параметры:
@@ -128,7 +130,7 @@ public class ActOperHPRep {
         //запрос для получения информации о типе отчета диапоазоне дат
         RepType repType = loadRepType(repId, dsR);
 
-        if (repType.getType().equals("G1")) {
+        if (repType.getTypeCode().equals("Gт")) {
 
             SXSSFRow row_1 = sh.createRow(0);
             row_1.setHeight((short) 435);
@@ -192,13 +194,13 @@ public class ActOperHPRep {
         }
 
         // Пожалуй, наполню-ка я лист отдельным методом. И сначала заполняем его, чтобы узнать Rows. Cols
-        switch (repType.getType()) {
-            case ("Т1"):
-            case ("Т2"):
-            case ("Т3"):
-            case ("Т4"):
+        switch (repType.getTypeCode()) {
+            case ("Tт"):
+            case ("Tто"):
+            case ("Tц"):
+            case ("Tцо"):
 
-                int begRowT1 = 9;  // строка в екселе, с которой начинается собственно отчет. //todo сделаю шапку - надо поменять
+                int begRowT1 = 9;  // строка в екселе, с которой начинается собственно отчет.
                 List<LocalDateTime> dateListT1 = new ArrayList<>();
                 LocalDateTime localDateTempT1 = repType.getBeg();
 
@@ -353,8 +355,8 @@ public class ActOperHPRep {
 
                 break;
 
-            case ("Т7"):
-            case ("Т13"):
+            case ("Tг"):
+            case ("Tго"):
 
                 int begRowT7 = 9;  // строка в екселе, с которой начинается собственно отчет.
                 List<LocalDateTime> dateListT7 = new ArrayList<>();
@@ -501,9 +503,9 @@ public class ActOperHPRep {
 
                 break;
 
-            case ("Vгв"):
+            case ("Qгп"):
 
-                int begRowV = 9;  // строка в екселе, с которой начинается собственно отчет. //todo сделаю шапку - надо поменять
+                int begRowV = 9;  // строка в екселе, с которой начинается собственно отчет.
                 List<LocalDateTime> dateListV = new ArrayList<>();
                 LocalDateTime localDateTempV = repType.getBeg();
 
@@ -515,11 +517,13 @@ public class ActOperHPRep {
                 //Приступим к основному отчету
                 // Устанавливаем ширины колонок. В конце мероприятия
                 setColumnWidth(sh);
-                sh.setColumnWidth(6, 4695);
+                sh.setColumnWidth(6, 4295);
                 sh.setColumnWidth(7, 4695);
+                sh.setColumnWidth(8, 4695);
+
 
                 for (int i = 1; i <= colsV; i++) {
-                    sh.setColumnWidth(7+i, 4669);
+                    sh.setColumnWidth(8+i, 4669);
                 }
 
                 // Прекрасно, Заголовок сделали. Готовим шапку.
@@ -561,30 +565,41 @@ public class ActOperHPRep {
 
                 SXSSFCell cell_6_7V = row_6V.createCell(6);
                 cell_6_7V.setCellStyle(tableHeaderStyle);
-                cell_6_7V.setCellValue("Нормативный диапазон (нормативная уставка)");
-                CellRangeAddress headerNormRangeV = new CellRangeAddress(5, 6, 6, 7);
-                sh.addMergedRegion(headerNormRangeV);
-                CellRangeAddress borderForNormRangeV = new CellRangeAddress(5, 6, 6, 7);
-                setBorders(borderForNormRangeV, sh);
+                cell_6_7V.setCellValue("Ед. изм.");
+                CellRangeAddress headerMeasure = new CellRangeAddress(5, 8, 6, 6);
+                sh.addMergedRegion(headerMeasure);
+                CellRangeAddress borderForMeasure = new CellRangeAddress(5, 8, 6, 6);
+                RegionUtil.setBorderBottom(BorderStyle.THICK, borderForMeasure, sh);
+                RegionUtil.setBorderTop(BorderStyle.THICK, borderForMeasure, sh);
+                RegionUtil.setBorderLeft(BorderStyle.THICK, borderForMeasure, sh);
+                RegionUtil.setBorderRight(BorderStyle.THICK, borderForMeasure, sh);
 
-                SXSSFCell cell_8_7V = row_8V.createCell(6);
-                cell_8_7V.setCellStyle(tableHeaderStyle);
-                cell_8_7V.setCellValue("MIN");
+                SXSSFCell cell_6_8V = row_6V.createCell(7);
+                cell_6_8V.setCellStyle(tableHeaderStyle);
+                cell_6_8V.setCellValue("Нормативный диапазон (нормативная уставка)");
+                CellRangeAddress headerNormRangeV = new CellRangeAddress(5, 6, 7, 8);
+                sh.addMergedRegion(headerNormRangeV);
+                CellRangeAddress borderForNormRangeV = new CellRangeAddress(5, 6, 7, 8);
+                setBorders(borderForNormRangeV, sh);
 
                 SXSSFCell cell_8_8V = row_8V.createCell(7);
                 cell_8_8V.setCellStyle(tableHeaderStyle);
-                cell_8_8V.setCellValue("MAX");
+                cell_8_8V.setCellValue("MIN");
 
-                SXSSFCell cell_9_7V = row_9V.createCell(6);
-                cell_9_7V.setCellStyle(tableHeaderStyle);
-                cell_9_7V.setCellValue("М.куб.");
+                SXSSFCell cell_8_9V = row_8V.createCell(8);
+                cell_8_9V.setCellStyle(tableHeaderStyle);
+                cell_8_9V.setCellValue("MAX");
+
                 SXSSFCell cell_9_8V = row_9V.createCell(7);
                 cell_9_8V.setCellStyle(tableHeaderStyle);
                 cell_9_8V.setCellValue("М.куб.");
+                SXSSFCell cell_9_9V = row_9V.createCell(8);
+                cell_9_9V.setCellStyle(tableHeaderStyle);
+                cell_9_9V.setCellValue("М.куб.");
 
                 // декларируем переменные для шапки
 
-                int iV = 8; //вообще последний неизменный столбец - 6, но считаем с 0, потому 5
+                int iV = 9; //вообще последний неизменный столбец - 6, но считаем с 0, потому 5
 
                 for (LocalDateTime localDateTime: dateListV) {
 
@@ -616,19 +631,19 @@ public class ActOperHPRep {
 
                 fillSheetV(wb, repId, begRowV, dateListV.size(), dsR, dsRW, repType);
 
-                sh.createFreezePane(8, 9);
+                sh.createFreezePane(9, 9);
 
 
                 LOGGER.log(Level.INFO, "Report body created {0}", repId);
 
                 break;
-            case ("Р1"):
-            case ("Р2"):
-            case ("Р3"):
-            case ("Р4"):
-            case ("Р7"):
-            case ("Р13"):
-                int begRowP = 9;  // строка в екселе, с которой начинается собственно отчет. //todo сделаю шапку - надо поменять
+            case ("pт"):
+            case ("pто"):
+            case ("pц"):
+            case ("pцо"):
+            case ("pг"):
+            case ("pго"):
+                int begRowP = 9;  // строка в екселе, с которой начинается собственно отчет.
 //                long colsP = 0;
                 List<LocalDateTime> dateListP = new ArrayList<>();
                 LocalDateTime localDateTempP = repType.getBeg();
@@ -747,9 +762,9 @@ public class ActOperHPRep {
                 LOGGER.log(Level.INFO, "Report body created {0}", repId);
 
                 break;
-            case ("G1"):
+            case ("Gт"):
 
-                int begRowG = 7;  // строка в екселе, с которой начинается собственно отчет. //todo сделаю шапку - надо поменять
+                int begRowG = 7;  // строка в екселе, с которой начинается собственно отчет.
                 int colsG = 0;
                 List<LocalDateTime> dateListG = new ArrayList<>();
                 LocalDateTime localDateTempG = repType.getBeg();
@@ -769,8 +784,14 @@ public class ActOperHPRep {
                 sh.setColumnWidth(3, 4000);
                 sh.setColumnWidth(4, 10956);
 
-                for (int i = 1; i <= colsG; i++) {
-                    sh.setColumnWidth(4+i, 2944);
+                if (repType.getInterval().equals("D")) {
+                    for (int i = 1; i <= colsG; i++) {
+                        sh.setColumnWidth(4+i, 2944);
+                    }
+                } else {
+                    for (int i = 1; i <= colsG; i++) {
+                        sh.setColumnWidth(4 + i, 5400);
+                    }
                 }
 
                 // Прекрасно, Заголовок сделали. Готовим шапку.
@@ -1037,33 +1058,17 @@ public class ActOperHPRep {
                     SXSSFCell parValue = row.createCell(i+4);
                     parValue.setCellValue(value.getParValue());
                     if (value.getColor() != null) {
-                        if (colors.isEmpty()) {
+                        if (colors.containsKey(value.getColor())) {
+                            parValue.setCellStyle(colors.get(value.getColor()));
+                        } else {
                             CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
                             String rgbS = value.getColor();
                             byte [] rgbB = Hex.decodeHex(rgbS);
                             XSSFColor color = new XSSFColor(rgbB, null);
                             cellColoredStyle.setFillForegroundColor(color);
                             cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            colors.put(value.getColor(), cellColoredStyle);
                             parValue.setCellStyle(cellColoredStyle);
-                        } else {
-                            int j = 0;
-                            for (CellStyleClass styleForColoredCell : colors) {
-                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
-                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
-                                    j = 1;
-                                }
-                            }
-                            if (j == 0) {
-                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
-                                String rgbS = value.getColor();
-                                byte [] rgbB = Hex.decodeHex(rgbS);
-                                XSSFColor color = new XSSFColor(rgbB, null);
-                                cellColoredStyle.setFillForegroundColor(color);
-                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
-                                parValue.setCellStyle(cellColoredStyle);
-                            }
                         }
                     } else {
                         parValue.setCellStyle(cellNoBoldStyle);
@@ -1071,7 +1076,6 @@ public class ActOperHPRep {
                     i = i + 5;
                 }
                 Rows++;
-//            }
         }
     }
 
@@ -1125,37 +1129,20 @@ public class ActOperHPRep {
                 int i = 10;
                 for (Value value : object.getValues()){
 
-
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
                     if (value.getColor() != null) {
-                        if (colors.isEmpty()) {
+                        if (colors.containsKey(value.getColor())) {
+                            parValue.setCellStyle(colors.get(value.getColor()));
+                        } else {
                             CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
                             String rgbS = value.getColor();
                             byte [] rgbB = Hex.decodeHex(rgbS);
                             XSSFColor color = new XSSFColor(rgbB, null);
                             cellColoredStyle.setFillForegroundColor(color);
                             cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            colors.put(value.getColor(), cellColoredStyle);
                             parValue.setCellStyle(cellColoredStyle);
-                        } else {
-                            int j = 0;
-                            for (CellStyleClass styleForColoredCell : colors) {
-                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
-                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
-                                    j = 1;
-                                }
-                            }
-                            if (j == 0) {
-                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
-                                String rgbS = value.getColor();
-                                byte [] rgbB = Hex.decodeHex(rgbS);
-                                XSSFColor color = new XSSFColor(rgbB, null);
-                                cellColoredStyle.setFillForegroundColor(color);
-                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
-                                parValue.setCellStyle(cellColoredStyle);
-                            }
                         }
                     } else {
                         parValue.setCellStyle(cellNoBoldStyle);
@@ -1163,7 +1150,6 @@ public class ActOperHPRep {
                     i++;
                 }
                 Rows++;
-//            }
         }
     }
 
@@ -1197,47 +1183,34 @@ public class ActOperHPRep {
                 SXSSFCell zoneCell = row.createCell(5);
                 zoneCell.setCellValue(object.getValues().get(0).getZone());
                 zoneCell.setCellStyle(cellNoBoldStyle);
-                SXSSFCell tnv = row.createCell(6);
+                SXSSFCell measureCell = row.createCell(6);
+                measureCell.setCellValue(object.getValues().get(0).getMeasure());
+                measureCell.setCellStyle(cellNoBoldStyle);
+                SXSSFCell tnv = row.createCell(7);
                 tnv.setCellValue(object.getValues().get(0).getMin());
                 tnv.setCellStyle(cellNoBoldStyle);
 
-                SXSSFCell tnvGmc = row.createCell(7);
+                SXSSFCell tnvGmc = row.createCell(8);
                 tnvGmc.setCellValue(object.getValues().get(0).getMax());
                 tnvGmc.setCellStyle(cellNoBoldStyle);
 
-                int i = 8;
+                int i = 9;
                 for (Value value : object.getValues()){
 
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
                     if (value.getColor() != null) {
-                        if (colors.isEmpty()) {
+                        if (colors.containsKey(value.getColor())) {
+                            parValue.setCellStyle(colors.get(value.getColor()));
+                        } else {
                             CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
                             String rgbS = value.getColor();
                             byte [] rgbB = Hex.decodeHex(rgbS);
                             XSSFColor color = new XSSFColor(rgbB, null);
                             cellColoredStyle.setFillForegroundColor(color);
                             cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            colors.put(value.getColor(), cellColoredStyle);
                             parValue.setCellStyle(cellColoredStyle);
-                        } else {
-                            int j = 0;
-                            for (CellStyleClass styleForColoredCell : colors) {
-                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
-                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
-                                    j = 1;
-                                }
-                            }
-                            if (j == 0) {
-                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
-                                String rgbS = value.getColor();
-                                byte [] rgbB = Hex.decodeHex(rgbS);
-                                XSSFColor color = new XSSFColor(rgbB, null);
-                                cellColoredStyle.setFillForegroundColor(color);
-                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
-                                parValue.setCellStyle(cellColoredStyle);
-                            }
                         }
                     } else {
                         parValue.setCellStyle(cellNoBoldStyle);
@@ -1245,7 +1218,6 @@ public class ActOperHPRep {
                     i++;
                 }
                 Rows++;
-//            }
         }
     }
 
@@ -1295,33 +1267,17 @@ public class ActOperHPRep {
                     SXSSFCell parValue = row.createCell(i);
                     parValue.setCellValue(value.getParValue());
                     if (value.getColor() != null) {
-                        if (colors.isEmpty()) {
+                        if (colors.containsKey(value.getColor())) {
+                            parValue.setCellStyle(colors.get(value.getColor()));
+                        } else {
                             CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
                             String rgbS = value.getColor();
                             byte [] rgbB = Hex.decodeHex(rgbS);
                             XSSFColor color = new XSSFColor(rgbB, null);
                             cellColoredStyle.setFillForegroundColor(color);
                             cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                            colors.put(value.getColor(), cellColoredStyle);
                             parValue.setCellStyle(cellColoredStyle);
-                        } else {
-                            int j = 0;
-                            for (CellStyleClass styleForColoredCell : colors) {
-                                if (styleForColoredCell.getColorHex().equals(value.getColor())) {
-                                    parValue.setCellStyle(styleForColoredCell.getColoredCell());
-                                    j = 1;
-                                }
-                            }
-                            if (j == 0) {
-                                CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
-                                String rgbS = value.getColor();
-                                byte [] rgbB = Hex.decodeHex(rgbS);
-                                XSSFColor color = new XSSFColor(rgbB, null);
-                                cellColoredStyle.setFillForegroundColor(color);
-                                cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                                colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
-                                parValue.setCellStyle(cellColoredStyle);
-                            }
                         }
                     } else {
                         parValue.setCellStyle(cellNoBoldStyle);
@@ -1329,7 +1285,6 @@ public class ActOperHPRep {
                     i++;
                 }
                 Rows++;
-//            }
         }
     }
 
@@ -1367,33 +1322,17 @@ public class ActOperHPRep {
                 SXSSFCell parValue = row.createCell(i);
                 parValue.setCellValue(value.getParValue());
                 if (value.getColor() != null) {
-                    if (colors.isEmpty()) {
+                    if (colors.containsKey(value.getColor())) {
+                        parValue.setCellStyle(colors.get(value.getColor()));
+                    } else {
                         CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
                         String rgbS = value.getColor();
                         byte [] rgbB = Hex.decodeHex(rgbS);
                         XSSFColor color = new XSSFColor(rgbB, null);
                         cellColoredStyle.setFillForegroundColor(color);
                         cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                        colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
+                        colors.put(value.getColor(), cellColoredStyle);
                         parValue.setCellStyle(cellColoredStyle);
-                    } else {
-                        int j = 0;
-                        for (CellStyleClass styleForColoredCell : colors) {
-                            if (styleForColoredCell.getColorHex().equals(value.getColor())) {
-                                parValue.setCellStyle(styleForColoredCell.getColoredCell());
-                                j = 1;
-                            }
-                        }
-                        if (j == 0) {
-                            CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
-                            String rgbS = value.getColor();
-                            byte [] rgbB = Hex.decodeHex(rgbS);
-                            XSSFColor color = new XSSFColor(rgbB, null);
-                            cellColoredStyle.setFillForegroundColor(color);
-                            cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                            colors.add(new CellStyleClass(value.getColor(), cellColoredStyle));
-                            parValue.setCellStyle(cellColoredStyle);
-                        }
                     }
                 } else {
                     parValue.setCellStyle(cellNoBoldStyle);
@@ -1414,29 +1353,29 @@ public class ActOperHPRep {
 
         for (ReportObject object : tempObj) {
             if (!interrupted(repId, dsR).equals("Q")) {
-                switch (repType.getType()) {
-                    case ("Т1"):
-                    case ("Т2"):
-                    case ("Т3"):
-                    case ("Т4"):
+                switch (repType.getTypeCode()) {
+                    case ("Tт"):
+                    case ("Tто"):
+                    case ("Tц"):
+                    case ("Tцо"):
                         object.setValues(loadValuesT1(repId, object.getObjId(), dsR));
                         break;
-                    case ("Т7"):
-                    case ("Т13"):
+                    case ("Tг"):
+                    case ("Tго"):
                         object.setValues(loadValuesT7(repId, object.getObjId(), dsR));
                         break;
-                    case ("Vгв"):
+                    case ("Qгп"):
                         object.setValues(loadValuesV(repId, object.getObjId(), dsR));
                         break;
-                    case ("Р1"):
-                    case ("Р2"):
-                    case ("Р3"):
-                    case ("Р4"):
-                    case ("Р7"):
-                    case ("Р13"):
+                    case ("pт"):
+                    case ("pто"):
+                    case ("pц"):
+                    case ("pцо"):
+                    case ("pг"):
+                    case ("pго"):
                         object.setValues(loadValuesP(repId, object.getObjId(), dsR));
                         break;
-                    case ("G1"):
+                    case ("Gт"):
                         object.setValues(loadValuesG(repId, object.getObjId(), dsR));
                         break;
 
@@ -1448,20 +1387,20 @@ public class ActOperHPRep {
                     }
                     object.setValues(values);
                 }
-                if (object.getValues().size() == cols) {
-                    result.add(object);
-                } else {
-                    for (int i = 0; i < (object.getValues().size()/cols); i++) {
-                        ReportObject tempObject = new ReportObject(object.getNumPP(), object.getObjId(), object.getObjName(), object.getFilial(),
-                                object.getPredpr(), object.getObjAddress());
-                        List<Value> tempValue = new ArrayList<>();
-                        for (int k = 0; k < cols; k++) {
-                            tempValue.add(object.getValues().get(k + i*cols));
+                    if (object.getValues().size() == cols) {
+                        result.add(object);
+                    } else {
+                        for (int i = 0; i < (object.getValues().size()/cols); i++) {
+                            ReportObject tempObject = new ReportObject(object.getNumPP(), object.getObjId(), object.getObjName(), object.getFilial(),
+                                    object.getPredpr(), object.getObjAddress());
+                            List<Value> tempValue = new ArrayList<>();
+                            for (int k = 0; k < cols; k++) {
+                                tempValue.add(object.getValues().get(k + i*cols));
+                            }
+                            tempObject.setValues(tempValue);
+                            result.add(tempObject);
                         }
-                        tempObject.setValues(tempValue);
-                        result.add(tempObject);
                     }
-                }
             } else {
                 break;
             }
@@ -1482,6 +1421,7 @@ public class ActOperHPRep {
                 result.setEnd(res.getTimestamp("end_date").toLocalDateTime());
                 result.setType(res.getString("rep_type"));
                 result.setInterval(res.getString("interval"));
+                result.setTypeCode(res.getString("par_code"));
                 return result;
             }
 
@@ -1561,7 +1501,7 @@ public class ActOperHPRep {
             while (res.next()) {
                 result.add(new Value(res.getString("zone"), res.getString("min"),
                         res.getString("max"), res.getString("par_value"),
-                        res.getString("color")));
+                        res.getString("color"), res.getString("measure")));
             }
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "error load Values", e);

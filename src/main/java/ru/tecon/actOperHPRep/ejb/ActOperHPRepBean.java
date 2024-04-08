@@ -16,13 +16,19 @@ public class ActOperHPRepBean {
 
     @Resource(name = "jdbc/DataSourceR")
     private DataSource dsR;
-    @Resource(name = "jdbc/DataSourceRW")
+    @Resource(name = "jdbc/DataSource")
     private DataSource dsRW;
 
 
     public void createReport(int reportId) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> ActOperHPRep.makeReport(reportId, dsR, dsRW));
+        executor.execute(() -> {
+            try {
+                ActOperHPRep.makeReport(reportId, dsR, dsRW);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
 

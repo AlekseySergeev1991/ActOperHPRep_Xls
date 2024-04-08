@@ -10,6 +10,7 @@ public class RepType implements Serializable {
     private LocalDateTime end;
     private String type;
     private String interval;
+    private String typeCode;
 
     public RepType() {
     }
@@ -46,6 +47,14 @@ public class RepType implements Serializable {
         this.interval = interval;
     }
 
+    public String getTypeCode() {
+        return typeCode;
+    }
+
+    public void setTypeCode(String typeCode) {
+        this.typeCode = typeCode;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", RepType.class.getSimpleName() + "[", "]")
@@ -53,6 +62,7 @@ public class RepType implements Serializable {
                 .add("end=" + end)
                 .add("type='" + type + "'")
                 .add("interval='" + interval + "'")
+                .add("typeCode='" + typeCode + "'")
                 .toString();
     }
 }
