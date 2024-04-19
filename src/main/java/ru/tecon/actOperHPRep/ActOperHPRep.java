@@ -65,8 +65,6 @@ public class ActOperHPRep {
         long currentTime = System.nanoTime();
         LOGGER.log(Level.INFO, "start make report {0}", repId);
 
-        Thread.sleep(1000);
-
         ActOperHPRep ar = new ActOperHPRep();
         ar.setDsR(dsR);
         ar.setDsRW(dsRW);
@@ -128,7 +126,7 @@ public class ActOperHPRep {
 
 
         //запрос для получения информации о типе отчета диапоазоне дат
-        RepType repType = loadRepType(repId, dsR);
+        RepType repType = loadRepType(repId, dsRW);
 
         if (repType.getTypeCode().equals("Gт")) {
 
