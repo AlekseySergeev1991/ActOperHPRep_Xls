@@ -309,7 +309,18 @@ public class ActOperHPRep {
 
                     SXSSFCell cell_7_11T1 = row_7T1.createCell(iT1+5);
                     cell_7_11T1.setCellStyle(tableHeaderStyle);
-                    cell_7_11T1.setCellValue("Фактическая среднесуточная температура сетевой воды в подающем трубопроводе на вводе в ЦТП");
+                    if (repType.getTypeCode().equals("Tт")) {
+                        cell_7_11T1.setCellValue("Среднесуточная температура сетевой воды в подающем трубопроводе Теплосети");
+                    }
+                    if (repType.getTypeCode().equals("Tто")) {
+                        cell_7_11T1.setCellValue("Среднесуточная температура сетевой воды в обратном трубопроводе Теплосети");
+                    }
+                    if (repType.getTypeCode().equals("Tц")) {
+                        cell_7_11T1.setCellValue("Среднесуточная температура  в подающем трубопроводе ЦО");
+                    }
+                    if (repType.getTypeCode().equals("Tцо")) {
+                        cell_7_11T1.setCellValue("Среднесуточная температура  в обратном трубопроводе ЦО");
+                    }
 
                     SXSSFCell cell_8_9T1 = row_8T1.createCell(iT1+3);
                     cell_8_9T1.setCellStyle(tableHeaderStyle);
@@ -475,8 +486,12 @@ public class ActOperHPRep {
 
                     SXSSFCell cell_7_11T7 = row_7T7.createCell(iT7);
                     cell_7_11T7.setCellStyle(tableHeaderStyle);
-                    cell_7_11T7.setCellValue("Фактическая среднесуточная температура горячей воды в подающем трубопроводе на выходе из ЦТП");
-
+                    if (repType.getTypeCode().equals("Tг")) {
+                        cell_7_11T7.setCellValue("Среднесуточная температура горячей воды в подающем трубопроводе ГВС");
+                    }
+                    if (repType.getTypeCode().equals("Tго")) {
+                        cell_7_11T7.setCellValue("Среднесуточная температура горячей воды в обратном трубопроводе ГВС");
+                    }
 
                     SXSSFCell cell_8_11T7 = row_8T7.createCell(iT7);
                     cell_8_11T7.setCellStyle(tableHeaderStyle);
@@ -736,8 +751,24 @@ public class ActOperHPRep {
 
                     SXSSFCell cell_7_11P = row_7P.createCell(iP);
                     cell_7_11P.setCellStyle(tableHeaderStyle);
-                    cell_7_11P.setCellValue("Фактическое среднесуточное значение давления сетевой воды в подающем трубопроводе на вводе в ЦТП");
-
+                    if (repType.getTypeCode().equals("pт")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление сетевой воды в подающем трубопроводе Теплосети");
+                    }
+                    if (repType.getTypeCode().equals("pто")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление сетевой воды в обратном трубопроводе Теплосети");
+                    }
+                    if (repType.getTypeCode().equals("pц")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление в подающем трубопроводе ЦО");
+                    }
+                    if (repType.getTypeCode().equals("pцо")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление в обратном трубопроводе ЦО");
+                    }
+                    if (repType.getTypeCode().equals("pг")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление  горячей воды в подающем трубопроводе ГВС");
+                    }
+                    if (repType.getTypeCode().equals("pго")) {
+                        cell_7_11P.setCellValue("Среднесуточное давление  горячей воды в обратном трубопроводе ГВС");
+                    }
 
                     SXSSFCell cell_8_11P = row_8P.createCell(iP);
                     cell_8_11P.setCellStyle(tableHeaderStyle);
@@ -762,7 +793,7 @@ public class ActOperHPRep {
                 break;
             case ("Gт"):
 
-                int begRowG = 7;  // строка в екселе, с которой начинается собственно отчет.
+                int begRowG = 10;  // строка в екселе, с которой начинается собственно отчет.
                 int colsG = 0;
                 List<LocalDateTime> dateListG = new ArrayList<>();
                 LocalDateTime localDateTempG = repType.getBeg();
@@ -820,42 +851,48 @@ public class ActOperHPRep {
 
                 if (repType.getInterval().equals("D")) {
                     SXSSFRow row_8 = sh.createRow(7);
+                    SXSSFRow row_9 = sh.createRow(8);
+                    SXSSFRow row_10 = sh.createRow(9);
+                    SXSSFRow row_11 = sh.createRow(10);
+                    row_9.setHeight((short) 2720);
+
+
                     begRowG++;
-                    CellRangeAddress num = new CellRangeAddress(6, 7, 0, 0);
+                    CellRangeAddress num = new CellRangeAddress(6, 10, 0, 0);
                     sh.addMergedRegion(num);
-                    CellRangeAddress borderForNum = new CellRangeAddress(6, 7, 0, 0);
+                    CellRangeAddress borderForNum = new CellRangeAddress(6, 10, 0, 0);
                     RegionUtil.setBorderBottom(BorderStyle.THICK, borderForNum, sh);
                     RegionUtil.setBorderTop(BorderStyle.THICK, borderForNum, sh);
                     RegionUtil.setBorderLeft(BorderStyle.THICK, borderForNum, sh);
                     RegionUtil.setBorderRight(BorderStyle.THICK, borderForNum, sh);
 
-                    CellRangeAddress objPar = new CellRangeAddress(6, 7, 1, 1);
+                    CellRangeAddress objPar = new CellRangeAddress(6, 10, 1, 1);
                     sh.addMergedRegion(objPar);
-                    CellRangeAddress borderForObjPar = new CellRangeAddress(6, 7, 1, 1);
+                    CellRangeAddress borderForObjPar = new CellRangeAddress(6, 10, 1, 1);
                     RegionUtil.setBorderBottom(BorderStyle.THICK, borderForObjPar, sh);
                     RegionUtil.setBorderTop(BorderStyle.THICK, borderForObjPar, sh);
                     RegionUtil.setBorderLeft(BorderStyle.THICK, borderForObjPar, sh);
                     RegionUtil.setBorderRight(BorderStyle.THICK, borderForObjPar, sh);
 
-                    CellRangeAddress techProc = new CellRangeAddress(6, 7, 2, 2);
+                    CellRangeAddress techProc = new CellRangeAddress(6, 10, 2, 2);
                     sh.addMergedRegion(techProc);
-                    CellRangeAddress borderForTechProc = new CellRangeAddress(6, 7, 2, 2);
+                    CellRangeAddress borderForTechProc = new CellRangeAddress(6, 10, 2, 2);
                     RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTechProc, sh);
                     RegionUtil.setBorderTop(BorderStyle.THICK, borderForTechProc, sh);
                     RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTechProc, sh);
                     RegionUtil.setBorderRight(BorderStyle.THICK, borderForTechProc, sh);
 
-                    CellRangeAddress unit = new CellRangeAddress(6, 7, 3, 3);
+                    CellRangeAddress unit = new CellRangeAddress(6, 10, 3, 3);
                     sh.addMergedRegion(unit);
-                    CellRangeAddress borderForUnit = new CellRangeAddress(6, 7, 3, 3);
+                    CellRangeAddress borderForUnit = new CellRangeAddress(6, 10, 3, 3);
                     RegionUtil.setBorderBottom(BorderStyle.THICK, borderForUnit, sh);
                     RegionUtil.setBorderTop(BorderStyle.THICK, borderForUnit, sh);
                     RegionUtil.setBorderLeft(BorderStyle.THICK, borderForUnit, sh);
                     RegionUtil.setBorderRight(BorderStyle.THICK, borderForUnit, sh);
 
-                    CellRangeAddress total = new CellRangeAddress(6, 7, 4, 4);
+                    CellRangeAddress total = new CellRangeAddress(6, 10, 4, 4);
                     sh.addMergedRegion(total);
-                    CellRangeAddress borderForTotal = new CellRangeAddress(6, 7, 4, 4);
+                    CellRangeAddress borderForTotal = new CellRangeAddress(6, 10, 4, 4);
                     RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTotal, sh);
                     RegionUtil.setBorderTop(BorderStyle.THICK, borderForTotal, sh);
                     RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTotal, sh);
@@ -877,6 +914,7 @@ public class ActOperHPRep {
 
                         for (int j = 0; j < 24; j++) {
                             SXSSFCell hourCell = row_8.createCell(i*24 + 5 + j);
+                            sh.setColumnWidth(i*24 + 5 + j, 4695);
                             hourCell.setCellStyle(tableHeaderStyle);
                             if (j<9) {
                                 hourCell.setCellValue("0" + (j + 1) + " ч.");
@@ -885,22 +923,90 @@ public class ActOperHPRep {
                             } else {
                                 hourCell.setCellValue((j+1) + " ч.");
                             }
+                            SXSSFCell nameCell = row_9.createCell(i*24 + 5 + j);
+                            nameCell.setCellStyle(tableHeaderStyle);
+                            nameCell.setCellValue("Массовый расход сетевой воды на тепловом вводе");
+
+                            SXSSFCell algNameCell = row_10.createCell(i*24 + 5 + j);
+                            algNameCell.setCellStyle(tableHeaderStyle);
+                            algNameCell.setCellValue("G1 - G2");
+
+                            SXSSFCell unitsCell = row_11.createCell(i*24 + 5 + j);
+                            unitsCell.setCellStyle(tableHeaderStyle);
+                            unitsCell.setCellValue("тонн");
                         }
                     }
-                }
-                // декларируем переменные для шапки
-                SXSSFCell cell;
+                } else{
+                    SXSSFRow row_8 = sh.createRow(7);
+                    SXSSFRow row_9 = sh.createRow(8);
+                    SXSSFRow row_10 = sh.createRow(9);
+                    row_8.setHeight((short) 2720);
 
-                int i = 0;
-                for (LocalDateTime curDateLDT : dateListG) {
-                    String curDateS = String.valueOf(curDateLDT);
+                    CellRangeAddress num = new CellRangeAddress(6, 9, 0, 0);
+                    sh.addMergedRegion(num);
+                    CellRangeAddress borderForNum = new CellRangeAddress(6, 9, 0, 0);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForNum, sh);
+
+                    CellRangeAddress objPar = new CellRangeAddress(6, 9, 1, 1);
+                    sh.addMergedRegion(objPar);
+                    CellRangeAddress borderForObjPar = new CellRangeAddress(6, 9, 1, 1);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForObjPar, sh);
+
+                    CellRangeAddress techProc = new CellRangeAddress(6, 9, 2, 2);
+                    sh.addMergedRegion(techProc);
+                    CellRangeAddress borderForTechProc = new CellRangeAddress(6, 9, 2, 2);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTechProc, sh);
+
+                    CellRangeAddress unit = new CellRangeAddress(6, 9, 3, 3);
+                    sh.addMergedRegion(unit);
+                    CellRangeAddress borderForUnit = new CellRangeAddress(6, 9, 3, 3);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForUnit, sh);
+
+                    CellRangeAddress total = new CellRangeAddress(6, 9, 4, 4);
+                    sh.addMergedRegion(total);
+                    CellRangeAddress borderForTotal = new CellRangeAddress(6, 9, 4, 4);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTotal, sh);
+
+                    int i = 0;
+                    for (LocalDateTime curDateLDT : dateListG) {
+                        String curDateS = String.valueOf(curDateLDT);
+                        sh.setColumnWidth(i + 5, 4695);
 
                         curDateS = curDateS.replace('T', ' ');
-                        cell = row_7G.createCell(i + 5);
-                        cell.setCellStyle(tableHeaderStyle);
+                        SXSSFCell dateCell = row_7G.createCell(i + 5);
+                        dateCell.setCellStyle(tableHeaderStyle);
                         curDateS = curDateS.substring(8, 10) + "." + curDateS.substring(5, 7);
-                        cell.setCellValue(curDateS);
-                    i++;
+                        dateCell.setCellValue(curDateS);
+
+                        SXSSFCell nameCell = row_8.createCell(i + 5);
+                        nameCell.setCellStyle(tableHeaderStyle);
+                        nameCell.setCellValue("Массовый расход сетевой воды на тепловом вводе");
+
+                        SXSSFCell algNameCell = row_9.createCell(i + 5);
+                        algNameCell.setCellStyle(tableHeaderStyle);
+                        algNameCell.setCellValue("G1 - G2");
+
+                        SXSSFCell unitsCell = row_10.createCell(i + 5);
+                        unitsCell.setCellStyle(tableHeaderStyle);
+                        unitsCell.setCellValue("тонн");
+
+                        i++;
+                    }
                 }
 
                 LOGGER.log(Level.INFO, "Report head created {0}", repId);
@@ -910,13 +1016,12 @@ public class ActOperHPRep {
                 fillSheetG(wb, repId, begRowG, colsG, dsR, dsRW, repType);
 
                 if (repType.getInterval().equals("D")) {
-                    sh.createFreezePane(5, 8);
+                    sh.createFreezePane(5, 11);
                 } else {
-                    sh.createFreezePane(5, 7);
+                    sh.createFreezePane(5, 10);
                 }
 
                 LOGGER.log(Level.INFO, "Report body created {0}", repId);
-
 
                 break;
 
