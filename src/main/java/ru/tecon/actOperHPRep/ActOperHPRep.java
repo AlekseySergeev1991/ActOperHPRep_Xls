@@ -39,8 +39,9 @@ public class ActOperHPRep {
     private static final String LOAD_VALUE_V_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_v(?, ?) order by zone, measure, time_stamp";
     private static final String LOAD_VALUE_P_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_p(?, ?)";
     private static final String LOAD_VALUE_G_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_g(?, ?)";
+    private static final String LOAD_VALUE_GTP_TYPE = "SELECT * from dsp_0079t.sel_rep_fact_gtp(?, ?)";
 
-    private static final String INTERRUPTED = "select  dsp_0079t.get_rep_status(?)";
+    private static final String INTERRUPTED = "select dsp_0079t.get_rep_status(?)";
     private static final String PERCENT = "call dsp_0079t.update_percent(?, ?)";
     private static final String DELSQL = "call dsp_0079t.del_report(?,?)";
     private static final String SQL = "select * from dsp_0079t.save_report(?,?)";
@@ -72,7 +73,7 @@ public class ActOperHPRep {
         try {
             w = ar.printReport(repId, dsR, dsRW);
             ar.saveReportIntoTable (w, repId, dsRW);
-//            ar.saveReportIntoFile(w, "C:\\abc\\ActOperMOEK_DelTest.xlsx");
+//            ar.saveReportIntoFile(w, "C:\\abc\\ActOperMOEK_DelTest24_10.xlsx");
 
         } catch (IOException | SQLException | ParseException | DecoderException e) {
             LOGGER.log(Level.WARNING, "makeReport error", e);
@@ -176,7 +177,64 @@ public class ActOperHPRep {
             cell_4_1.setCellValue("Интервал: " + interval);
             CellRangeAddress intervalMerge = new CellRangeAddress(3, 3, 0, 4);
             sh.addMergedRegion(intervalMerge);
-            cell_4_1.setCellStyle(headerStyle);
+            cell_4_1.setCellStyle(headerStyleNoBold);
+
+            String now = new SimpleDateFormat("dd.MM.yyyy HH:mm").format(new Date());
+            SXSSFRow row_5 = sh.createRow(4);
+            row_5.setHeight((short) 435);
+            SXSSFCell cell5_1 = row_5.createCell(0);
+            cell5_1.setCellStyle(nowStyle);
+            cell5_1.setCellValue("Отчет сформирован  " + now);
+            CellRangeAddress nowDone = new CellRangeAddress(4, 4, 0, 4);
+            sh.addMergedRegion(nowDone);
+        } else if (repType.getTypeCode().equals("Gтп")) {
+            SXSSFRow row_1 = sh.createRow(0);
+            row_1.setHeight((short) 435);
+            SXSSFCell cell_1_1 = row_1.createCell(0);
+            cell_1_1.setCellValue("ПАО \"МОЭК\": АС \"ТЕКОН - Диспетчеризация\"");
+
+            CellRangeAddress title = new CellRangeAddress(0, 0, 0, 4);
+            sh.addMergedRegion(title);
+            cell_1_1.setCellStyle(headerStyle);
+
+            SXSSFRow row_2 = sh.createRow(1);
+            row_2.setHeight((short) 435);
+            SXSSFCell cell_2_1 = row_2.createCell(0);
+            cell_2_1.setCellValue("Анализ фактической работы ЦТП по показателю: Gтп" );
+            CellRangeAddress formName = new CellRangeAddress(1, 1, 0, 4);
+            sh.addMergedRegion(formName);
+            cell_2_1.setCellStyle(headerStyle);
+
+            SXSSFRow row_3 = sh.createRow(2);
+            row_3.setHeight((short) 435);
+            SXSSFCell cell_3_1 = row_3.createCell(0);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            LocalDateTime begFormatted = repType.getBeg();
+            String stringBeg = begFormatted.format(formatter);
+            LocalDateTime endFormattedT1 = repType.getEnd();
+            String stringEnd = endFormattedT1.format(formatter);
+            cell_3_1.setCellValue("за период: " + stringBeg + " - " + stringEnd);
+            cell_3_1.setCellStyle(headerStyleNoBold);
+            CellRangeAddress period = new CellRangeAddress(2, 2, 0, 4);
+            sh.addMergedRegion(period);
+            cell_3_1.setCellStyle(headerStyleNoBold);
+
+            SXSSFRow row_4 = sh.createRow(3);
+            row_4.setHeight((short) 435);
+            SXSSFCell cell_4_1 = row_4.createCell(0);
+            String interval = "";
+            switch (repType.getInterval()) {
+                case ("D"):
+                    interval = "Часовой";
+                    break;
+                case ("M"):
+                    interval = "Дневной";
+                    break;
+            }
+            cell_4_1.setCellValue("Интервал: " + interval);
+            CellRangeAddress intervalMerge = new CellRangeAddress(3, 3, 0, 4);
+            sh.addMergedRegion(intervalMerge);
+            cell_4_1.setCellStyle(headerStyleNoBold);
 
             // Печатаем отчетов зад общий для всех отчетов
             String now = new SimpleDateFormat("dd.MM.yyyy HH:mm").format(new Date());
@@ -1025,6 +1083,239 @@ public class ActOperHPRep {
 
                 break;
 
+            case ("Gтп"):
+
+                int begRowGtp = 10;  // строка в екселе, с которой начинается собственно отчет.
+                int colsGtp = 0;
+                List<LocalDateTime> dateListGtp = new ArrayList<>();
+                LocalDateTime localDateTempGtp = repType.getBeg();
+
+                dateListGtp.add(localDateTempGtp);
+                colsGtp = fillDateList(repType, dateListGtp, localDateTempGtp);
+
+                if (repType.getInterval().equals("D")) {
+                    colsGtp = colsGtp*24;
+                }
+
+                //Приступим к основному отчету
+                // Устанавливаем ширины колонок. В конце мероприятия
+                sh.setColumnWidth(0, 9 * 256);
+                sh.setColumnWidth(1, 21 * 256);
+                sh.setColumnWidth(2, 2944);
+                sh.setColumnWidth(3, 4000);
+                sh.setColumnWidth(4, 10956);
+
+                if (repType.getInterval().equals("D")) {
+                    for (int i = 1; i <= colsGtp; i++) {
+                        sh.setColumnWidth(4+i, 2944);
+                    }
+                } else {
+                    for (int i = 1; i <= colsGtp; i++) {
+                        sh.setColumnWidth(4 + i, 5400);
+                    }
+                }
+
+                // Прекрасно, Заголовок сделали. Готовим шапку.
+                SXSSFRow row_7Gtp = sh.createRow(6);
+                row_7Gtp.setHeight((short) 350);
+
+                SXSSFCell cell_7_1Gtp = row_7Gtp.createCell(0);
+                cell_7_1Gtp.setCellStyle(tableHeaderStyle);
+                cell_7_1Gtp.setCellValue("№ п/п");
+
+                SXSSFCell cell_7_2Gtp = row_7Gtp.createCell(1);
+                cell_7_2Gtp.setCellStyle(tableHeaderStyle);
+                cell_7_2Gtp.setCellValue("Объект");
+
+                SXSSFCell cell_7_3Gtp = row_7Gtp.createCell(2);
+                cell_7_3Gtp.setCellStyle(tableHeaderStyle);
+                cell_7_3Gtp.setCellValue("Филиал");
+
+                SXSSFCell cell_7_4Gtp = row_7Gtp.createCell(3);
+                cell_7_4Gtp.setCellStyle(tableHeaderStyle);
+                cell_7_4Gtp.setCellValue("Предприятие");
+
+                SXSSFCell cell_7_5Gtp = row_7Gtp.createCell(4);
+                cell_7_5Gtp.setCellStyle(tableHeaderStyle);
+                cell_7_5Gtp.setCellValue("Адрес ЦТП");
+
+                // декларируем переменные для шапки
+
+                if (repType.getInterval().equals("D")) {
+                    SXSSFRow row_8 = sh.createRow(7);
+                    SXSSFRow row_9 = sh.createRow(8);
+                    SXSSFRow row_10 = sh.createRow(9);
+                    SXSSFRow row_11 = sh.createRow(10);
+                    row_9.setHeight((short) 1250);
+
+
+                    begRowGtp++;
+                    CellRangeAddress num = new CellRangeAddress(6, 10, 0, 0);
+                    sh.addMergedRegion(num);
+                    CellRangeAddress borderForNum = new CellRangeAddress(6, 10, 0, 0);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForNum, sh);
+
+                    CellRangeAddress objPar = new CellRangeAddress(6, 10, 1, 1);
+                    sh.addMergedRegion(objPar);
+                    CellRangeAddress borderForObjPar = new CellRangeAddress(6, 10, 1, 1);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForObjPar, sh);
+
+                    CellRangeAddress techProc = new CellRangeAddress(6, 10, 2, 2);
+                    sh.addMergedRegion(techProc);
+                    CellRangeAddress borderForTechProc = new CellRangeAddress(6, 10, 2, 2);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTechProc, sh);
+
+                    CellRangeAddress unit = new CellRangeAddress(6, 10, 3, 3);
+                    sh.addMergedRegion(unit);
+                    CellRangeAddress borderForUnit = new CellRangeAddress(6, 10, 3, 3);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForUnit, sh);
+
+                    CellRangeAddress total = new CellRangeAddress(6, 10, 4, 4);
+                    sh.addMergedRegion(total);
+                    CellRangeAddress borderForTotal = new CellRangeAddress(6, 10, 4, 4);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTotal, sh);
+
+                    for (int i = 0; i < dateListGtp.size(); i++) {
+                        SXSSFCell dateCell = row_7Gtp.createCell(i*24 + 5);
+                        dateCell.setCellStyle(tableHeaderStyle);
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+                        String curDateString = dateListGtp.get(i).format(formatter);
+                        dateCell.setCellValue(curDateString);
+                        CellRangeAddress date = new CellRangeAddress(6, 6, i*24+5, i*24+28);
+                        sh.addMergedRegion(date);
+                        CellRangeAddress borderForDate = new CellRangeAddress(6, 6, i*24+5, i*24+28);
+                        RegionUtil.setBorderBottom(BorderStyle.THICK, borderForDate, sh);
+                        RegionUtil.setBorderTop(BorderStyle.THICK, borderForDate, sh);
+                        RegionUtil.setBorderLeft(BorderStyle.THICK, borderForDate, sh);
+                        RegionUtil.setBorderRight(BorderStyle.THICK, borderForDate, sh);
+
+                        for (int j = 0; j < 24; j++) {
+                            SXSSFCell hourCell = row_8.createCell(i*24 + 5 + j);
+                            sh.setColumnWidth(i*24 + 5 + j, 4695);
+                            hourCell.setCellStyle(tableHeaderStyle);
+                            if (j<9) {
+                                hourCell.setCellValue("0" + (j + 1) + " ч.");
+                            } else if (j == 23) {
+                                hourCell.setCellValue("00 ч.");
+                            } else {
+                                hourCell.setCellValue((j+1) + " ч.");
+                            }
+                            SXSSFCell nameCell = row_9.createCell(i*24 + 5 + j);
+                            nameCell.setCellStyle(tableHeaderStyle);
+                            nameCell.setCellValue("Подпитка отопления");
+
+                            SXSSFCell algNameCell = row_10.createCell(i*24 + 5 + j);
+                            algNameCell.setCellStyle(tableHeaderStyle);
+                            algNameCell.setCellValue("Gтп");
+
+                            SXSSFCell unitsCell = row_11.createCell(i*24 + 5 + j);
+                            unitsCell.setCellStyle(tableHeaderStyle);
+                            unitsCell.setCellValue("тонн");
+                        }
+                    }
+                } else{
+                    SXSSFRow row_8 = sh.createRow(7);
+                    SXSSFRow row_9 = sh.createRow(8);
+                    SXSSFRow row_10 = sh.createRow(9);
+                    row_8.setHeight((short) 1250);
+
+                    CellRangeAddress num = new CellRangeAddress(6, 9, 0, 0);
+                    sh.addMergedRegion(num);
+                    CellRangeAddress borderForNum = new CellRangeAddress(6, 9, 0, 0);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForNum, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForNum, sh);
+
+                    CellRangeAddress objPar = new CellRangeAddress(6, 9, 1, 1);
+                    sh.addMergedRegion(objPar);
+                    CellRangeAddress borderForObjPar = new CellRangeAddress(6, 9, 1, 1);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForObjPar, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForObjPar, sh);
+
+                    CellRangeAddress techProc = new CellRangeAddress(6, 9, 2, 2);
+                    sh.addMergedRegion(techProc);
+                    CellRangeAddress borderForTechProc = new CellRangeAddress(6, 9, 2, 2);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTechProc, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTechProc, sh);
+
+                    CellRangeAddress unit = new CellRangeAddress(6, 9, 3, 3);
+                    sh.addMergedRegion(unit);
+                    CellRangeAddress borderForUnit = new CellRangeAddress(6, 9, 3, 3);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForUnit, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForUnit, sh);
+
+                    CellRangeAddress total = new CellRangeAddress(6, 9, 4, 4);
+                    sh.addMergedRegion(total);
+                    CellRangeAddress borderForTotal = new CellRangeAddress(6, 9, 4, 4);
+                    RegionUtil.setBorderBottom(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderTop(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderLeft(BorderStyle.THICK, borderForTotal, sh);
+                    RegionUtil.setBorderRight(BorderStyle.THICK, borderForTotal, sh);
+
+                    int i = 0;
+                    for (LocalDateTime curDateLDT : dateListGtp) {
+                        String curDateS = String.valueOf(curDateLDT);
+                        sh.setColumnWidth(i + 5, 4695);
+
+                        curDateS = curDateS.replace('T', ' ');
+                        SXSSFCell dateCell = row_7Gtp.createCell(i + 5);
+                        dateCell.setCellStyle(tableHeaderStyle);
+                        curDateS = curDateS.substring(8, 10) + "." + curDateS.substring(5, 7);
+                        dateCell.setCellValue(curDateS);
+
+                        SXSSFCell nameCell = row_8.createCell(i + 5);
+                        nameCell.setCellStyle(tableHeaderStyle);
+                        nameCell.setCellValue("Подпитка отопления");
+
+                        SXSSFCell algNameCell = row_9.createCell(i + 5);
+                        algNameCell.setCellStyle(tableHeaderStyle);
+                        algNameCell.setCellValue("Gтп");
+
+                        SXSSFCell unitsCell = row_10.createCell(i + 5);
+                        unitsCell.setCellStyle(tableHeaderStyle);
+                        unitsCell.setCellValue("тонн");
+
+                        i++;
+                    }
+                }
+
+                LOGGER.log(Level.INFO, "Report head created {0}", repId);
+
+                // Отлично. Заголовок и шапка сделаны. Идем по таблице, создаем и заполняем ячейки.
+
+                fillSheetGtp(wb, repId, begRowGtp, colsGtp, dsR, dsRW, repType);
+
+                if (repType.getInterval().equals("D")) {
+                    sh.createFreezePane(5, 11);
+                } else {
+                    sh.createFreezePane(5, 10);
+                }
+
+                LOGGER.log(Level.INFO, "Report body created {0}", repId);
+
+                break;
             default:
                 break;
         }
@@ -1446,6 +1737,61 @@ public class ActOperHPRep {
         }
     }
 
+    private void fillSheetGtp (SXSSFWorkbook wb, int repId, int begRow, int cols, DataSource dsR, DataSource dsRW, RepType repType) throws DecoderException {
+        CellStyle cellNoBoldStyle = setCellNoBoldStyle(wb);
+        SXSSFSheet sh = wb.getSheetAt(0);
+
+        // Заполняем лист значениями, взятыми из таблицы
+        List<ReportObject> objects = reworkObjList(repId, dsR, dsRW, cols, repType);
+
+        Rows = begRow;
+
+        for (ReportObject object: objects) {
+            SXSSFRow row = sh.createRow(Rows);
+            row.setHeight((short) 350);
+            SXSSFCell objNumCell = row.createCell(0);
+            objNumCell.setCellValue(object.getNumPP());
+            objNumCell.setCellStyle(cellNoBoldStyle);
+            SXSSFCell objNameCell = row.createCell(1);
+            objNameCell.setCellValue(object.getObjName());
+            objNameCell.setCellStyle(cellNoBoldStyle);
+            SXSSFCell filialCell = row.createCell(2);
+            filialCell.setCellValue(object.getFilial());
+            filialCell.setCellStyle(cellNoBoldStyle);
+            SXSSFCell predprCell = row.createCell(3);
+            predprCell.setCellValue(object.getPredpr());
+            predprCell.setCellStyle(cellNoBoldStyle);
+            SXSSFCell objAddrCell = row.createCell(4);
+            objAddrCell.setCellValue(object.getObjAddress());
+            objAddrCell.setCellStyle(cellNoBoldStyle);
+
+            int i = 5;
+            for (Value value : object.getValues()){
+
+                SXSSFCell parValue = row.createCell(i);
+                parValue.setCellValue(value.getParValue());
+                if (value.getColor() != null) {
+                    if (colors.containsKey(value.getColor())) {
+                        parValue.setCellStyle(colors.get(value.getColor()));
+                    } else {
+                        CellStyle cellColoredStyle = setCellNoBoldStyle(wb);
+                        String rgbS = value.getColor();
+                        byte [] rgbB = Hex.decodeHex(rgbS);
+                        XSSFColor color = new XSSFColor(rgbB, null);
+                        cellColoredStyle.setFillForegroundColor(color);
+                        cellColoredStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                        colors.put(value.getColor(), cellColoredStyle);
+                        parValue.setCellStyle(cellColoredStyle);
+                    }
+                } else {
+                    parValue.setCellStyle(cellNoBoldStyle);
+                }
+                i++;
+            }
+            Rows++;
+        }
+    }
+
     public List<ReportObject> reworkObjList(int repId, DataSource dsR, DataSource dsRW, int cols, RepType repType) {
         List<ReportObject> result = new ArrayList<>();
         List<ReportObject> tempObj = loadObjects(repId, dsR);
@@ -1480,6 +1826,8 @@ public class ActOperHPRep {
                         break;
                     case ("Gт"):
                         object.setValues(loadValuesG(repId, object.getObjId(), dsR));
+                    case ("Gтп"):
+                        object.setValues(loadValuesGtp(repId, object.getObjId(), dsR));
                         break;
 
                 }
@@ -1638,6 +1986,25 @@ public class ActOperHPRep {
 
         try (Connection connect = ds.getConnection();
              PreparedStatement stm = connect.prepareStatement(LOAD_VALUE_G_TYPE)) {
+            stm.setInt(1, repId);
+            stm.setInt(2, objId);
+            ResultSet res = stm.executeQuery();
+            while (res.next()) {
+                result.add(new Value(res.getString("par_value"),
+                        res.getString("color")));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "error load Values", e);
+        }
+
+        return result;
+    }
+
+    public List<Value> loadValuesGtp(int repId, int objId, DataSource ds) {
+        List<Value> result = new ArrayList<>();
+
+        try (Connection connect = ds.getConnection();
+             PreparedStatement stm = connect.prepareStatement(LOAD_VALUE_GTP_TYPE)) {
             stm.setInt(1, repId);
             stm.setInt(2, objId);
             ResultSet res = stm.executeQuery();
